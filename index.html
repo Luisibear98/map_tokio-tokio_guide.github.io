@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tokio — mapa real del itinerario de 7 días</title>
+<link rel="stylesheet" href="assets/leaflet.css">
+<style>
+:root{--ink:#17212b;--muted:#5d6b78;--panel:#fff;--bg:#eef2f5}*{box-sizing:border-box}html,body{height:100%;margin:0}body{background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}.app{height:100%;display:grid;grid-template-columns:340px 1fr}aside{overflow:auto;padding:22px;background:var(--panel);box-shadow:3px 0 18px #0002;z-index:500}h1{font-size:25px;line-height:1.15;margin:0 0 8px}p{margin:6px 0 12px;color:var(--muted)}#map{height:100%;width:100%}.download{display:inline-block;border-radius:999px;padding:9px 13px;background:#17212b;color:#fff;font-weight:800;text-decoration:none}.download:hover,.download:focus{background:#075aa5;outline:2px solid #17212b;outline-offset:2px}.filters{display:flex;flex-wrap:wrap;gap:7px;margin:16px 0}button{border:0;border-radius:999px;padding:8px 11px;background:#e8edf1;color:var(--ink);font-weight:700;cursor:pointer}button:hover,button:focus{outline:2px solid #17212b;outline-offset:2px}.day{border-left:6px solid var(--color);padding:7px 9px;margin:9px 0;background:#f7f9fa;border-radius:7px}.day b{display:block}.day span{color:var(--muted);font-size:13px}.note{font-size:12px;padding:10px;border-radius:8px;background:#fff7dc;color:#554713}.popup-title{font-weight:800;font-size:15px;margin-bottom:3px}.popup-day{font-size:12px;font-weight:800}.popup-copy{margin:5px 0;color:#34414d}.nav{display:inline-block;margin-top:5px;color:#075aa5;font-weight:700;text-decoration:none}.nav:hover{text-decoration:underline}.legend{background:#fff;padding:9px 11px;border-radius:8px;box-shadow:0 1px 7px #0003;line-height:1.7}.swatch{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px}@media(max-width:800px){.app{display:block}.app aside{height:auto}.app #map{height:72vh;min-height:520px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+<h1>Tokio y excursiones en 7 días</h1>
+<p>Mapa geográfico real con OpenStreetMap. Pulsa un punto para leer la descripción y abrirlo en Google Maps.</p>
+<p><a class="download" href="itinerario.txt" download>Descargar itinerario TXT ↓</a></p>
+<div class="filters"><button onclick="showTokyo()">Tokio</button><button onclick="showAll()">Todos</button><button onclick="showDay(1)">Día 1</button><button onclick="showDay(2)">Día 2</button><button onclick="showDay(3)">Día 3</button><button onclick="showDay(4)">Día 4</button><button onclick="showDay(5)">Día 5</button><button onclick="showDay(6)">Día 6 · Nikkō</button><button onclick="showDay(7)">Día 7 · Kamakura</button></div>
+<div class="day" style="--color:#e45756"><b>Día 1 · Oeste urbano</b><span>Shinjuku → Yoyogi → Yoyogi Uehara → Tomigaya → Shibuya</span></div>
+<div class="day" style="--color:#f3a712"><b>Día 2 · Cafés y barrios creativos</b><span>Ebisu → Daikanyama → Nakameguro → Shimokitazawa → Daita</span></div>
+<div class="day" style="--color:#2f9146"><b>Día 3 · Tokio histórico y este</b><span>Asakusa → Kappabashi → Kuramae → Akihabara → Kikanbo → Ginza</span></div>
+<div class="day" style="--color:#277da1"><b>Día 4 · Santuario, parque y moda</b><span>Meiji Jingu → Yoyogi Park → Harajuku → Omotesando</span></div>
+<div class="day" style="--color:#8a5bb7"><b>Día 5 · Ghibli y cultura otaku</b><span>Mitaka/Ghibli → Kichijoji → Nakano Broadway</span></div>
+<div class="day" style="--color:#c44569"><b>Día 6 · Excursión a Nikkō</b><span>Tobu-Nikko → Shinkyo → Rinno-ji → Toshogu → Futarasan → Kanmangafuchi</span></div>
+<div class="day" style="--color:#008f95"><b>Día 7 · Kamakura y Enoshima</b><span>Kamakura → Hachimangu → Hase-dera → Gran Buda → Enoshima</span></div>
+<p class="note">Las líneas unen el orden de visita; no son rutas exactas a pie o en tren. Usa el enlace de cada marcador para navegar. Se necesita internet para cargar el mapa.</p>
+</aside>
+<div id="map" aria-label="Mapa real de Tokio con los puntos del itinerario"></div>
+</div>
+<script src="assets/leaflet.js"></script>
+<script>
+const colors={1:'#e45756',2:'#f3a712',3:'#2f9146',4:'#277da1',5:'#8a5bb7',6:'#c44569',7:'#008f95'};
+const places=[
+{d:1,n:'Tokyo Metropolitan Government Building',lat:35.6896,lng:139.6917,q:'Tokyo Metropolitan Government Building Observatory',x:'Observatorio gratuito del piso 45. Mejor al atardecer; comprueba qué torre está abierta.'},
+{d:1,n:'Shinjuku',lat:35.6938,lng:139.7034,q:'Shinjuku Tokyo',x:'Calles comerciales; por la noche, Omoide Yokocho o Golden Gai.'},
+{d:1,n:'Shinjuku Gyoen',lat:35.6852,lng:139.7100,q:'Shinjuku Gyoen National Garden',x:'Jardín amplio y tranquilo; parada opcional para empezar el día.'},
+{d:1,n:'Yoyogi',lat:35.6830,lng:139.7020,q:'Yoyogi Station Tokyo',x:'Zona de transición para caminar hacia el suroeste y parar a comer.'},
+{d:1,n:'Yoyogi Uehara',lat:35.6691,lng:139.6797,q:'Yoyogi Uehara Station',x:'Desvío opcional para cafés, panaderías y ambiente residencial.'},
+{d:1,n:'Tomigaya',lat:35.6664,lng:139.6873,q:'Tomigaya Tokyo',x:'Calles tranquilas, cafeterías y pequeñas tiendas antes de Shibuya.'},
+{d:1,n:'Shibuya Crossing',lat:35.6595,lng:139.7005,q:'Shibuya Scramble Crossing',x:'Cruce, Center-gai, Miyashita Park y calles laterales.'},
+{d:2,n:'Ebisu',lat:35.6467,lng:139.7101,q:'Ebisu Station Tokyo',x:'Desayuno o almuerzo; Yebisu Garden Place es una extensión opcional.'},
+{d:2,n:'Daikanyama T-Site',lat:35.6487,lng:139.6997,q:'Daikanyama T-Site',x:'Arquitectura, librería, diseño y tiendas independientes.'},
+{d:2,n:'Nakameguro',lat:35.6443,lng:139.6991,q:'Nakameguro Station',x:'Pasea junto al río Meguro y entra en cafés y boutiques.'},
+{d:2,n:'Shimokitazawa',lat:35.6616,lng:139.6680,q:'Shimokitazawa Station',x:'Vintage, discos, pequeños locales de música, curry y bares.'},
+{d:2,n:'Setagaya-Daita',lat:35.6584,lng:139.6616,q:'Setagaya-Daita Station',x:'Final residencial y tranquilo; opcional si todavía tienes energía.'},
+{d:3,n:'Senso-ji · Asakusa',lat:35.7148,lng:139.7967,q:'Senso-ji Temple',x:'Llega temprano para ver Kaminarimon, Nakamise y el templo con menos gente.'},
+{d:3,n:'Kappabashi',lat:35.7127,lng:139.7882,q:'Kappabashi Dougu Street',x:'Cuchillos, cerámica, utensilios y réplicas de comida.'},
+{d:3,n:'Kuramae',lat:35.7032,lng:139.7908,q:'Kuramae Station Tokyo',x:'Cafés, talleres y artesanía; buen descanso antes de Akihabara.'},
+{d:3,n:'Akihabara',lat:35.6984,lng:139.7731,q:'Akihabara Electric Town',x:'Arcades, electrónica, manga y figuras.'},
+{d:3,n:'Kikanbo Kanda',lat:35.6936533,lng:139.7724218,q:'Karashibi Miso Ramen Kikanbo Kanda',x:'2-10-9 Kajicho. Ramen miso picante y entumecedor; suele haber cola y no admite reservas.'},
+{d:3,n:'Ginza 4-chome',lat:35.6719,lng:139.7650,q:'Ginza 4 Chome Crossing',x:'Arquitectura, grandes almacenes y depachika; mejor por la tarde-noche.'},
+{d:3,n:'Sushi Ginza Onodera',lat:35.6681,lng:139.7677,q:'Sushi Ginza Onodera 5-14-14 Ginza',x:'Omakase Edomae en Ginza 5-14-14, cerca de Higashi-Ginza. Reserva antes.'},
+{d:4,n:'Meiji Jingu',lat:35.6764,lng:139.6993,q:'Meiji Jingu',x:'Recorre el bosque y el santuario por la mañana.'},
+{d:4,n:'Yoyogi Park',lat:35.6717,lng:139.6949,q:'Yoyogi Park',x:'Paseo y descanso; suele tener más ambiente el fin de semana.'},
+{d:4,n:'Harajuku · Takeshita Street',lat:35.6713,lng:139.7041,q:'Takeshita Street Harajuku',x:'Moda juvenil; después explora las calles laterales menos saturadas.'},
+{d:4,n:'Omotesando',lat:35.6652,lng:139.7122,q:'Omotesando Tokyo',x:'Arquitectura, moda, Cat Street y extensión opcional a Aoyama.'},
+{d:5,n:'Museo Ghibli, Mitaka',lat:35.6962,lng:139.5704,q:'Ghibli Museum Mitaka',x:'1-1-83 Shimorenjaku. Entrada únicamente con reserva previa y hora asignada.'},
+{d:5,n:'Inokashira Park · Kichijoji',lat:35.7006,lng:139.5749,q:'Inokashira Park Kichijoji',x:'Pasea por el parque y come en Kichijoji después del museo.'},
+{d:5,n:'Nakano Broadway',lat:35.7091,lng:139.6656,q:'Nakano Broadway 5-52-15 Nakano',x:'Manga, Mandarake, figuras y coleccionismo retro; reserva dos o tres horas.'},
+{d:6,n:'Tobu-Nikko Station',lat:36.7480,lng:139.6194,q:'Tobu Nikko Station',x:'Llegada desde Asakusa en tren limitado de Tobu; reserva asiento y sal temprano.'},
+{d:6,n:'Puente Shinkyo',lat:36.7542,lng:139.6046,q:'Shinkyo Bridge Nikko',x:'Puente histórico a la entrada del conjunto Patrimonio Mundial.'},
+{d:6,n:'Rinno-ji',lat:36.7539,lng:139.6010,q:'Rinnoji Temple Nikko',x:'Templo principal de Nikkō; visita antes de entrar en Toshogu.'},
+{d:6,n:'Nikko Toshogu',lat:36.7581,lng:139.5989,q:'Nikko Toshogu Shrine',x:'Santuario monumental de Tokugawa Ieyasu; es la visita central del día.'},
+{d:6,n:'Futarasan Jinja',lat:36.7588,lng:139.5962,q:'Nikko Futarasan Shrine',x:'Santuario boscoso junto a Toshogu, más tranquilo y fácil de combinar.'},
+{d:6,n:'Kanmangafuchi Abyss',lat:36.7510,lng:139.5871,q:'Kanmangafuchi Abyss Nikko',x:'Paseo junto al río con la hilera de estatuas Jizo; deja tiempo para volver a la estación.'},
+{d:7,n:'Kamakura Station',lat:35.3192,lng:139.5505,q:'Kamakura Station',x:'Llegada desde Tokio y punto de conexión con el tren Enoden.'},
+{d:7,n:'Tsurugaoka Hachimangu',lat:35.3260,lng:139.5564,q:'Tsurugaoka Hachimangu',x:'Santuario principal de Kamakura; recorre Komachi-dori de camino.'},
+{d:7,n:'Hase-dera',lat:35.3125,lng:139.5331,q:'Hasedera Temple Kamakura',x:'Templo, jardines y vistas de la costa; baja en Hase con el Enoden.'},
+{d:7,n:'Gran Buda · Kotoku-in',lat:35.3167,lng:139.5357,q:'Kotoku-in Great Buddha Kamakura',x:'Gran Buda de bronce, a poca distancia a pie de Hase-dera.'},
+{d:7,n:'Enoshima Station',lat:35.3116,lng:139.4875,q:'Enoshima Station Enoden',x:'Llegada en el Enoden; desde aquí se camina hasta la isla.'},
+{d:7,n:'Enoshima Shrine',lat:35.3011,lng:139.4804,q:'Enoshima Shrine',x:'Sube por la isla entre santuarios, tiendas y miradores.'},
+{d:7,n:'Enoshima Sea Candle',lat:35.2993,lng:139.4777,q:'Enoshima Sea Candle',x:'Final del itinerario y buena zona para ver el atardecer si el cielo está despejado.'}
+];
+const map=L.map('map').setView([35.681,139.704],11);
+const osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'});
+const carto=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:20,subdomains:'abcd',attribution:'&copy; OpenStreetMap &copy; CARTO'});
+let tileErrors=0;osm.on('tileerror',()=>{tileErrors+=1;if(tileErrors===3){map.removeLayer(osm);carto.addTo(map)}});osm.addTo(map);
+const dayGroups={},dayBounds={};for(let d=1;d<=7;d++){dayGroups[d]=L.layerGroup();dayBounds[d]=[]}
+for(const p of places){const marker=L.circleMarker([p.lat,p.lng],{radius:8,color:'#fff',weight:3,fillColor:colors[p.d],fillOpacity:1});const maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.q);marker.bindTooltip(p.n,{direction:'top',offset:[0,-5]});marker.bindPopup(`<div class="popup-title">${p.n}</div><div class="popup-day" style="color:${colors[p.d]}">Día ${p.d}</div><div class="popup-copy">${p.x}</div><a class="nav" href="${maps}" target="_blank" rel="noopener">Abrir ubicación y navegación ↗</a>`);marker.addTo(dayGroups[p.d]);dayBounds[p.d].push([p.lat,p.lng])}
+for(let d=1;d<=7;d++)L.polyline(dayBounds[d],{color:colors[d],weight:4,opacity:.7,dashArray:'8 7'}).addTo(dayGroups[d]);
+const allBounds=L.latLngBounds(places.map(p=>[p.lat,p.lng]));
+const tokyoBounds=L.latLngBounds(places.filter(p=>p.d<=5).map(p=>[p.lat,p.lng]));
+for(let d=1;d<=5;d++)map.addLayer(dayGroups[d]);map.fitBounds(tokyoBounds.pad(.08));
+function hideAll(){for(let i=1;i<=7;i++)map.removeLayer(dayGroups[i])}
+function showDay(d){hideAll();map.addLayer(dayGroups[d]);map.fitBounds(L.latLngBounds(dayBounds[d]).pad(.18))}
+function showTokyo(){hideAll();for(let i=1;i<=5;i++)map.addLayer(dayGroups[i]);map.fitBounds(tokyoBounds.pad(.08))}
+function showAll(){for(let i=1;i<=7;i++)map.addLayer(dayGroups[i]);map.fitBounds(allBounds.pad(.08))}
+const legend=L.control({position:'bottomright'});legend.onAdd=()=>{const div=L.DomUtil.create('div','legend');div.innerHTML=Object.keys(colors).map(d=>`<div><i class="swatch" style="background:${colors[d]}"></i>Día ${d}</div>`).join('');return div};legend.addTo(map);
+</script>
+</body>
+</html>
